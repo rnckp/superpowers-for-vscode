@@ -1,0 +1,11 @@
+[project]
+name = "superpowers-vscode"
+version = "0.1.0"
+description = "Use Jesse Vincent’s Superpowers agentic skill framework in VS Code's GitHub Copilot. "
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+
+[tool.uv]
+exclude-newer = "7 days"
