@@ -5,7 +5,7 @@
 
 Run from the superpowers-vscode repo root. Generates into the target project:
 - .github/copilot-instructions.md (bootstrap, auto-loaded by VS Code)
-- .github/prompts/*.prompt.md (one per skill, invokable with # in chat)
+- .github/prompts/*.prompt.md (one per skill, invokable with / in chat)
 - .superpowers/skills/<name>/* (supporting files: prompts, scripts, guides)
 - .superpowers/agents/* (agent definitions)
 
@@ -86,11 +86,12 @@ When this skill references Claude Code tools, use VS Code Copilot equivalents:
 | `Task` (subagent) | `runSubagent` (sequential only — no parallel dispatch) |
 | `TodoWrite` | `manage_todo_list` |
 | `WebFetch` | `fetch_webpage` |
-| `Skill` tool | No tool equivalent — skills are prompt files, reference with `#` in chat |
+| `Skill` tool | No tool equivalent — skills are prompt files, run with `/` in chat |
 
 ### VS Code Copilot Notes
 
 {path_note}\
+- If a required skill prompt is not already loaded, ask the human partner to run the matching `/superpowers-*` prompt. Do not search for `SKILL.md` files.
 - `runSubagent` calls must be sequential. For parallel agent skills, execute tasks one at a time.
 - `manage_todo_list` states: `not-started`, `in-progress` (max 1), `completed`.
 - `apply_patch` edits text files using a unified diff with surrounding context.
@@ -434,6 +435,36 @@ description: "{description}"
 {supporting_note}{footer}"""
 
 
+def adapt_core_behavior_for_vscode(body: str) -> str:
+    """Remove upstream Skill-tool wording that VS Code Copilot cannot follow."""
+    replacements = {
+        "Invoke relevant or requested skills BEFORE any response or action.": (
+            "Use relevant or requested skills only after their slash prompt is loaded. "
+            "If a needed skill prompt is not loaded, ask your human partner to run "
+            "the matching `/superpowers-*` prompt before any substantive response or action."
+        ),
+        "Invoke Skill tool": "Ask the human partner to run the matching `/superpowers-*` prompt",
+        "Invoke brainstorming skill": "Ask the human partner to run `/superpowers-brainstorming`",
+        "invoke the skill": "use the loaded slash prompt",
+        "Invoke relevant or requested skills": "Use loaded relevant or requested skill prompts",
+        "check. If an invoked skill turns out to be wrong": (
+            "check. If a loaded skill prompt turns out to be wrong"
+        ),
+        "If an invoked skill turns out to be wrong": (
+            "If a loaded skill prompt turns out to be wrong"
+        ),
+        "Invoke it.": "Ask for the matching `/superpowers-*` prompt.",
+        "invoke it.": "ask for the matching `/superpowers-*` prompt.",
+        "Invoke the skill": "Use the loaded slash prompt",
+        "invoke the relevant skill": "use the loaded relevant slash prompt",
+    }
+
+    for old, new in replacements.items():
+        body = body.replace(old, new)
+
+    return body
+
+
 def generate_bootstrap(
     using_superpowers_body: str, skill_list: list[tuple[str, str, str]]
 ) -> str:
@@ -441,7 +472,7 @@ def generate_bootstrap(
     skill_rows = []
     for skill_name, prompt_name, description in sorted(skill_list, key=lambda x: x[0]):
         short_desc = description[:80] + "..." if len(description) > 80 else description
-        skill_rows.append(f"| {skill_name} | `#{prompt_name}` | {short_desc} |")
+        skill_rows.append(f"| {skill_name} | `/{prompt_name}` | {short_desc} |")
     skill_table = "\n".join(skill_rows)
 
     # Remove the multi-platform "How to Access Skills" and "Platform Adaptation"
@@ -470,6 +501,8 @@ def generate_bootstrap(
                 break
         after = "\n".join(lines[end_idx:])
         adapted_body = before + after
+
+    adapted_body = adapt_core_behavior_for_vscode(adapted_body)
 
     return f"""\
 <!-- AUTO-GENERATED from Superpowers — do not edit manually. -->
@@ -501,15 +534,17 @@ names — translate them using this mapping:
 
 **Important:** All `.superpowers/` paths in skills are **relative to the workspace root directory**, not to the prompt file location. Use `read_file` with the exact paths shown — do NOT use `file_search` to locate them, as gitignored files are invisible to search.
 
+**Important:** Do not search for `.superpowers/skills/**/SKILL.md`. The skill entrypoints are VS Code prompt files in `.github/prompts/` and are run from chat with `/superpowers-*` commands.
+
 ## How to Access Skills
 
 VS Code Copilot has no `Skill` tool. Skills are available as **prompt files**.
 
 When a skill applies to the current task:
-1. **Tell your human partner** which skill to reference
-   (e.g., "This looks like a debugging task — please add `#superpowers-debugging` to your message")
-2. Your human partner adds the prompt file reference in chat with `#`
-3. Follow the loaded skill content exactly
+1. **Tell your human partner** which slash prompt to run
+    (e.g., "This looks like a debugging task — please run `/superpowers-debugging`")
+2. Stop until your human partner runs that prompt, because you cannot load prompt files yourself
+3. When the prompt is loaded, follow its content exactly
 
 ### Available Skills
 

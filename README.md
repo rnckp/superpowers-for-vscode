@@ -13,7 +13,7 @@ All credits go to [Jesse Vincent](https://github.com/obra) for his excellent ski
 A **sync script** reads from the upstream Superpowers repo and generates files directly into your target project:
 
 - `.github/copilot-instructions.md` — auto-loaded bootstrap with tool mapping and skill index
-- `.github/prompts/*.prompt.md` — one prompt file per skill, invokable with `#` in chat
+- `.github/prompts/*.prompt.md` — one prompt file per skill, invokable with `/` in chat
 - `.superpowers/skills/<name>/*` — supporting files (subagent prompts, technique guides, scripts)
 - `.superpowers/agents/*` — agent definitions (e.g., code-reviewer)
 - `@filename` references are inlined, `./path` references are rewritten to `.superpowers/` paths annotated with `(workspace root)` so models resolve them correctly
@@ -95,7 +95,7 @@ In any Copilot chat, reference skills with `/`:
 | `/superpowers-receive-review`  | Handling review feedback     |
 | `/superpowers-writing-skills`  | Creating new skills          |
 
-The bootstrap instructs Copilot to suggest relevant skills — it will tell you which `#` reference to add.
+The bootstrap instructs Copilot to suggest relevant skills — it will tell you which `/superpowers-*` prompt command to run.
 
 ## Updating
 
@@ -121,7 +121,7 @@ Skills are authored with Claude Code tool names. The bootstrap and each prompt f
 | `Glob`      | `file_search`                            |
 | `Task`      | `runSubagent` (sequential)               |
 | `TodoWrite` | `manage_todo_list`                       |
-| `Skill`     | Prompt files via `#`                     |
+| `Skill`     | Prompt files via `/`                     |
 
 Full mapping: [references/vscode-copilot-tools.md](references/vscode-copilot-tools.md)
 
